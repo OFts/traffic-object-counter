@@ -7,11 +7,30 @@ od = ObjectDetection()
 
 cap  = cv2.VideoCapture("cofal.mp4")
 
-# Define output video specifications
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # To create mp4 video
-fps = 30.0
-frame_size = (int(cap.get(3)), int(cap.get(4)))
-out = cv2.VideoWriter('vehicles_count.mp4', fourcc, fps, frame_size) 
+record_video = False
+
+# Save frames as video file if record_video is True
+if record_video:
+  # Define output video specifications
+  fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # To create mp4 video
+  fps = 30.0
+  frame_size = (int(cap.get(3)), int(cap.get(4)))
+  out = cv2.VideoWriter('vehicles_count.mp4', fourcc, fps, frame_size) 
+
+# Signature
+dev_name = "Dev by Oscar Fts"
+font = cv2.FONT_HERSHEY_SIMPLEX
+font_scale = 0.5
+name_color = (255, 255, 255)
+
+# Get dimensions
+ret, frame = cap.read()
+height, width = frame.shape[:2]
+# Get text dimensions
+(name_width, name_height), _ = cv2.getTextSize(dev_name, font, font_scale, 2)
+# Corner position
+name_x = width - name_width - 10
+name_y = height - 5
 
 # --------------------------------- Variables -------------------------------- #
 
@@ -28,7 +47,7 @@ x_count, y_count = 10, 30
 text_height = 25
 
 # Number of frames to process
-last_frame = 9000
+last_frame = 600
 
 # Frame counter
 count = 0
@@ -73,9 +92,10 @@ while True:
   # Center point current frame
   cp_crnt_frame = []
   
+  # Limit line color
+  lim_line_color = (0, 0, 255)
+  
   (class_ids, scores, boxes) = od.detect(frame)
-
-  cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
   
   for idx, box in enumerate(boxes):
     (x, y, w, h) = box
@@ -127,6 +147,7 @@ while True:
           object_exists = True
           if cross_line(pt2, pt):
             #print("cross")
+            lim_line_color = (0, 255, 255)
             if pt[2] == 1:
               class_id = 3
             else:
@@ -160,6 +181,12 @@ while True:
     cv2.putText(frame, text, (x_count, y_count - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     y_count += 30  # Aumenta la posición en y para que los textos no se superpongan
 
+  # Limit line
+  cv2.line(frame, (x1, y1), (x2, y2), lim_line_color, 2)
+  
+  # Signature
+  cv2.rectangle(frame, (name_x - 5, name_y - name_height - 10), (name_x + name_width + 5, name_y), (0, 0, 0), -1)
+  cv2.putText(frame, dev_name, (name_x, name_y - 5), font, font_scale, name_color, 2)
   
   # for object_id, pt in tracking_objects.items():
   #   cv2.circle(frame, pt[0:2], 20, (0, 255, 0), 2)
@@ -169,8 +196,9 @@ while True:
   #print(tracking_objects)
   print("Frame:", count, crossing_count)
   
-  # Escribir el frame en el video de salida
-  out.write(frame)
+  if record_video:
+    # Escribir el frame en el video de salida
+    out.write(frame)
   
   cv2.imshow("Frame", frame)
   key = cv2.waitKey(1)
