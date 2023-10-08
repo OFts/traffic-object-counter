@@ -1,12 +1,14 @@
 import cv2
 import numpy as np
 from object_detection import ObjectDetection
+from fps_handler import FPSHandler
 import math
 
 od = ObjectDetection()
 
 cap  = cv2.VideoCapture("cofal.mp4")
 
+fps_handler = FPSHandler()  # Initialize FPS controller
 record_video = False
 
 # Save frames as video file if record_video is True
@@ -108,24 +110,24 @@ while True:
     
     cp_crnt_frame.append((cx, cy, class_id))
 
-    # Obtener color y etiqueta para esta clase
+    # Get color and label for this class
     color = colors[class_id]
     label = "{}: {:.2f}".format(classes[class_id], confidence)
     
-    # Calcula el tamaño del texto
+    # Calculates text size
     label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
     label_height = label_size[1] + 10  # añade un margen de 10 pixels
 
-    # Dibuja un rectángulo de fondo con un margen
+    # Draw a rectangle background with a margin
     cv2.rectangle(frame, (x, y - label_height), (x + label_size[0], y), color, -1)
 
-    # Dibuja el texto encima del rectángulo (ajusta la posición y el color a negro)
+    # Draw the text on top of the rectangle (set the position and color to black)
     cv2.putText(frame, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
-    # Dibuja el rectángulo alrededor del objeto
+    # Draw the rectangle around the object
     cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
     
-    # Dibuja el centroide
+    # Draw the centroid
     cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
   
   if count <= 2:
@@ -174,10 +176,10 @@ while True:
     # Calcula el ancho del texto
     (text_width, _), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
     
-    # Dibuja el rectángulo negro de fondo
+    # Draw the black rectangle in the background
     cv2.rectangle(frame, (x_count, y_count - text_height), (x_count + text_width, y_count), (0, 0, 0), -1)
     
-    # Dibuja el texto blanco
+    # Draw the white text
     cv2.putText(frame, text, (x_count, y_count - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     y_count += 30  # Aumenta la posición en y para que los textos no se superpongan
 
@@ -188,6 +190,10 @@ while True:
   cv2.rectangle(frame, (name_x - 5, name_y - name_height - 10), (name_x + name_width + 5, name_y), (0, 0, 0), -1)
   cv2.putText(frame, dev_name, (name_x, name_y - 5), font, font_scale, name_color, 2)
   
+  # FPS
+  fps_handler.update()
+  fps_handler.draw_fps(frame)  # Draw FPS in a rectangle
+  
   # for object_id, pt in tracking_objects.items():
   #   cv2.circle(frame, pt[0:2], 20, (0, 255, 0), 2)
   #   cv2.putText(frame, str(object_id), (pt[0], pt[1] - 7), 0, 1, (0, 255, 0), 2)
@@ -197,7 +203,7 @@ while True:
   print("Frame:", count, crossing_count)
   
   if record_video:
-    # Escribir el frame en el video de salida
+    # Write the frame to the output video
     out.write(frame)
   
   cv2.imshow("Frame", frame)
